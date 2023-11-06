@@ -154,6 +154,29 @@ def generateCheckerboard(canvas, n_cols, n_rows, size_cols, size_rows):
     # text.preamble(r"\DeclareFixedFont{\LittleFont}{T1}{ptm}{b}{it}{0.75in}") #
     c.text(1.05*size_cols, 0.04*size_rows, caption)
 
+def generateCircleGrid(canvas, n_cols, n_rows, asymmetric, diameter, spacing):
+    # Convert to cm
+    diameter = diameter * 100.0
+    spacing = spacing * 100.0
+
+    # Message
+    grid_type = "asymmetric" if asymmetric else "symmetric"
+    print("Generating a {0} circle grid with {1}x{2} circles with a circle diameter of {3} cm and spacing of {4} cm".format(grid_type, n_cols, n_rows, diameter, spacing))
+
+    radius = diameter / 2.0
+    for x in range(n_cols):
+        offset = 0.5 * spacing if asymmetric and (x + 1) % 2 == 1 else 0  # Offset every other column if asymmetric
+        for y in range(n_rows):
+            if asymmetric:
+                center_x = x * 0.5 * spacing + radius
+            else:
+                center_x = x * spacing + radius
+            center_y = y * spacing + radius + offset
+            canvas.fill(path.circle(center_x, center_y, radius), [color.rgb.black])
+
+    # Print caption
+    caption = "{0} {1}x{2}@{3}cm+{4}cm".format(grid_type.capitalize(), n_cols, n_rows, diameter, spacing)
+    canvas.text(1.05 * diameter, 0.04 * spacing, caption)
 
 if __name__ == "__main__":
     usage="""
@@ -171,7 +194,7 @@ if __name__ == "__main__":
     outputOptions.add_argument('--eps', action='store_true', dest='do_eps', help='Also output an EPS file', required=False)
     
     genericOptions = parser.add_argument_group('Generic grid options')    
-    genericOptions.add_argument('--type', dest='gridType', help='The grid pattern type. (\'apriltag\' or \'checkerboard\')')
+    genericOptions.add_argument('--type', dest='gridType', help='The grid pattern type. (\'apriltag\', \'checkerboard\', or \'circles\')')
     genericOptions.add_argument('--nx', type=int, default=6, dest='n_cols', help='The number of tags in x direction (default: %(default)s)\n')
     genericOptions.add_argument('--ny', type=int, default=7, dest='n_rows', help='The number of tags in y direction (default: %(default)s)')
 
@@ -184,6 +207,12 @@ if __name__ == "__main__":
     checkerOptions = parser.add_argument_group('Checkerboard arguments')    
     checkerOptions.add_argument('--csx', type=float, default=0.05, dest='chessSzX', help='The size of one chessboard square in x direction [m] (default: %(default)s)')
     checkerOptions.add_argument('--csy', type=float, default=0.05, dest='chessSzY', help='The size of one chessboard square in y direction [m] (default: %(default)s)')
+
+    circleOptions = parser.add_argument_group('Circle grid arguments')    
+    circleOptions.add_argument('--asymmetric', action='store_true', dest='asymmetric', help='Generate an asymmetric circle grid (default: %(default)s)')
+    circleOptions.add_argument('--diameter', type=float, default=0.05, dest='diameter', help='The diameter of one circle [m] (default: %(default)s)')
+    circleOptions.add_argument('--spacing', type=float, default=0.05, dest='spacing', help='The spacing between circles [m] (default: %(default)s)')
+
 
     if len(sys.argv)==1:
         parser.print_help()
@@ -206,6 +235,8 @@ if __name__ == "__main__":
         generateAprilBoard(canvas, parsed.n_cols, parsed.n_rows, parsed.tsize, parsed.tagspacing, parsed.tagfamily, parsed.skipIds)
     elif parsed.gridType == "checkerboard":
         generateCheckerboard(c, parsed.n_cols, parsed.n_rows, parsed.chessSzX, parsed.chessSzY)
+    elif parsed.gridType == "circles":
+        generateCircleGrid(c, parsed.n_cols, parsed.n_rows, parsed.asymmetric, parsed.diameter, parsed.spacing)
     else:
         print("[ERROR]: Unknown grid pattern")
         sys.exit(0)
