@@ -192,7 +192,11 @@ if __name__ == "__main__":
     outputOptions = parser.add_argument_group('Output options')    
     outputOptions.add_argument('output', nargs="?", default="target", help='Output filename')
     outputOptions.add_argument('--eps', action='store_true', dest='do_eps', help='Also output an EPS file', required=False)
-    
+    outputOptions.add_argument('--width-cm', type=float, dest='width_in_cm', help='Page width in centimeters')
+    outputOptions.add_argument('--height-cm', type=float, dest='height_in_cm', help='Page height in centimeters')
+    outputOptions.add_argument('--width-in', type=float, dest='width_in_inches', help='Page width in inches')
+    outputOptions.add_argument('--height-in', type=float, dest='height_in_inches', help='Page height in inches')
+
     genericOptions = parser.add_argument_group('Generic grid options')    
     genericOptions.add_argument('--type', dest='gridType', help='The grid pattern type. (\'apriltag\', \'checkerboard\', or \'circles\')')
     genericOptions.add_argument('--nx', type=int, default=6, dest='n_cols', help='The number of tags in x direction (default: %(default)s)\n')
@@ -229,7 +233,22 @@ if __name__ == "__main__":
  
     #open a new canvas
     c = canvas.canvas()
-    
+    # Convert page size to cm if specified in inches
+    if parsed.width_in_inches is not None:
+        parsed.width_in_cm = parsed.width_in_inches * 2.54
+
+    if parsed.height_in_inches is not None:
+        parsed.height_in_cm = parsed.height_in_inches * 2.54
+
+    # If no size is specified, use the PyX library default
+    if parsed.width_in_cm is None and parsed.height_in_cm is None:
+        paperformat = document.paperformat.A4  # A4 is the default
+    else:
+        paperformat = document.paperformat(parsed.width_in_cm, parsed.height_in_cm)
+
+    p = document.page(c, paperformat=paperformat, centered=1) 
+    d = document.document(pages=[p])
+
     #draw the board
     if parsed.gridType == "apriltag":
         generateAprilBoard(canvas, parsed.n_cols, parsed.n_rows, parsed.tsize, parsed.tagspacing, parsed.tagfamily, parsed.skipIds)
@@ -242,7 +261,7 @@ if __name__ == "__main__":
         sys.exit(0)
             
     #write to file
-    c.writePDFfile(parsed.output)
+    d.writePDFfile(parsed.output)
     
     if parsed.do_eps:
-        c.writeEPSfile(parsed.output)
+        d.writeEPSfile(parsed.output)
