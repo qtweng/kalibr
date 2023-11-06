@@ -22,25 +22,25 @@ class AprilTagCodes:
                     #'t36h9':   (t36h9, 36),
                     't36h11':  (t36h11,36)}
 
-    def __init__(self, chosenTagFamiliy):
+    def __init__(self, chosenTagFamily):
         try:
-            self.chosenTagFamiliy = chosenTagFamiliy
-            self.tagCodes = AprilTagCodes.TagFamilies[chosenTagFamiliy][0]
-            self.totalBits = AprilTagCodes.TagFamilies[chosenTagFamiliy][1]
+            self.chosenTagFamily = chosenTagFamily
+            self.tagCodes = AprilTagCodes.TagFamilies[chosenTagFamily][0]
+            self.totalBits = AprilTagCodes.TagFamilies[chosenTagFamily][1]
         except:
-            print("[ERROR]: Unknown tag familiy.")
+            print("[ERROR]: Unknown tag family.")
             sys.exit(0)
 
 #borderBits must be consitent with the variable "blackBorder" in the detector code in file ethz_apriltag2/src/TagFamily.cc
-def generateAprilTag(canvas, position, metricSize, tagSpacing, tagID, tagFamililyData, rotation=2, symmCorners=True, borderBits=2):
+def generateAprilTag(canvas, position, metricSize, tagSpacing, tagID, tagFamilyData, rotation=2, symmCorners=True, borderBits=2):
     #get the tag code
     try:
-        tagCode=tagFamililyData.tagCodes[tagID]
+        tagCode=tagFamilyData.tagCodes[tagID]
     except:
-        print("[ERROR]: Requested tag ID of {0} not available in the {1} TagFamiliy".format(tagID, tagFamililyData.chosenTagFamiliy))        
+        print("[ERROR]: Requested tag ID of {0} not available in the {1} TagFamily".format(tagID, tagFamilyData.chosenTagFamily))        
 
     #calculate the bit size of the tag
-    sqrtBits = (math.sqrt(tagFamililyData.totalBits))
+    sqrtBits = (math.sqrt(tagFamilyData.totalBits))
     bitSquareSize = metricSize / (sqrtBits+borderBits*2)
     
     #position of tag
@@ -86,7 +86,7 @@ def generateAprilTag(canvas, position, metricSize, tagSpacing, tagID, tagFamilil
             c.fill(path.rect(point[0], point[1], metricSquareSize, metricSquareSize),[color.rgb.black])
 
 #tagSpaceing in % of tagSize
-def generateAprilBoard(canvas, n_cols, n_rows, tagSize, tagSpacing=0.25, tagFamilily="t36h11", skipIds=None):
+def generateAprilBoard(canvas, n_cols, n_rows, tagSize, tagSpacing=0.25, tagFamily="t36h11", skipIds=None):
     
     if(tagSpacing<0 or tagSpacing>1.0):
         print("[ERROR]: Invalid tagSpacing specified.  [0-1.0] of tagSize")
@@ -98,8 +98,8 @@ def generateAprilBoard(canvas, n_cols, n_rows, tagSize, tagSpacing=0.25, tagFami
     #convert to cm
     tagSize = tagSize*100.0
        
-    #get the tag familiy data
-    tagFamililyData = AprilTagCodes(tagFamilily)
+    #get the tag family data
+    tagFamilyData = AprilTagCodes(tagFamily)
     
     #create one tag
     numTags = n_cols*n_rows
@@ -110,7 +110,7 @@ def generateAprilBoard(canvas, n_cols, n_rows, tagSize, tagSpacing=0.25, tagFami
             id = n_cols * y + x
             if id not in skipIds:
                 pos = ( x*(1+tagSpacing)*tagSize, y*(1+tagSpacing)*tagSize)
-                generateAprilTag(canvas, pos, tagSize, tagSpacing, id, tagFamililyData, rotation=2)
+                generateAprilTag(canvas, pos, tagSize, tagSpacing, id, tagFamilyData, rotation=2)
                 #c.text(pos[0]+0.45*tagSize, pos[1]-0.7*tagSize*tagSpacing, "{0}".format(id))
     
     #draw axis
@@ -128,7 +128,7 @@ def generateAprilBoard(canvas, n_cols, n_rows, tagSize, tagSpacing=0.25, tagFami
     c.text(pos[0], pos[1]+tagSize*0.3, "y")
 
     #text
-    caption = "{0}x{1} tags, size={2}cm and spacing={3}cm".format(n_cols,n_rows,tagSize,tagSpacing*tagSize)
+    caption = "{0}x{1} {2} tags, size={3}cm and spacing={4}cm".format(n_cols,n_rows,tagFamily,tagSize,tagSpacing*tagSize)
     c.text(pos[0]+0.6*tagSize, pos[0], caption)
 
 
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     aprilOptions = parser.add_argument_group('Apriltag arguments')    
     aprilOptions.add_argument('--tsize', type=float, default=0.08, dest='tsize', help='The size of one tag [m] (default: %(default)s)')
     aprilOptions.add_argument('--tspace', type=float, default=0.3, dest='tagspacing', help='The space between the tags in fraction of the edge size [0..1] (default: %(default)s)')
-    aprilOptions.add_argument('--tfam', default='t36h11', dest='tagfamiliy', help='Familiy of April tags {0} (default: %(default)s)'.format(list(AprilTagCodes.TagFamilies.keys()))) 
+    aprilOptions.add_argument('--tfam', default='t36h11', dest='tagfamily', help='Family of April tags {0} (default: %(default)s)'.format(list(AprilTagCodes.TagFamilies.keys()))) 
     aprilOptions.add_argument('--skip-ids', default='', dest='skipIds', help='Space-separated list of tag ids to leave blank (default: none)')
 
     checkerOptions = parser.add_argument_group('Checkerboard arguments')    
@@ -203,7 +203,7 @@ if __name__ == "__main__":
     
     #draw the board
     if parsed.gridType == "apriltag":
-        generateAprilBoard(canvas, parsed.n_cols, parsed.n_rows, parsed.tsize, parsed.tagspacing, parsed.tagfamiliy, parsed.skipIds)
+        generateAprilBoard(canvas, parsed.n_cols, parsed.n_rows, parsed.tsize, parsed.tagspacing, parsed.tagfamily, parsed.skipIds)
     elif parsed.gridType == "checkerboard":
         generateCheckerboard(c, parsed.n_cols, parsed.n_rows, parsed.chessSzX, parsed.chessSzY)
     else:
